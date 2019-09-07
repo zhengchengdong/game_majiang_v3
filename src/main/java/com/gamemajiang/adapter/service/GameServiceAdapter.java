@@ -35,10 +35,16 @@ public class GameServiceAdapter implements GameService {
 	@Override
 	public CreateGameResult createGame(String creatorPlayerId, String gameId) {
 		checkAndLoadPlayerGoldAccountAggregate(creatorPlayerId);
-		CreateGameResult createGameResult = gameServiceImpl.createGame(creatorPlayerId, gameId);
-		persistAggregate(createGameResult);
-		updateForQuery(createGameResult);
-		return createGameResult;
+		PlayerGoldAccountAggregateRepository playerGoldAccountAggregateRepository = rootAggregateRepository
+				.get(PlayerGoldAccountAggregateRepository.class.getName());
+
+		PlayerGoldAccount account = playerGoldAccountAggregateRepository.findByKey(creatorPlayerId);
+		synchronized (account) {
+			CreateGameResult createGameResult = gameServiceImpl.createGame(creatorPlayerId, gameId);
+			persistAggregate(createGameResult);
+			updateForQuery(createGameResult);
+			return createGameResult;
+		}
 
 	}
 
